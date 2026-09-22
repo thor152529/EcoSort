@@ -1,278 +1,171 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Leaf, ArrowRight, Sparkles, Languages, Recycle, Trophy, MapPin, Truck, User, Camera, Award, Building2, Wind, BarChart3, Target, Globe2, ShieldCheck, Zap } from "lucide-react";
-import { PhoneFrame } from "@/components/mobile/PhoneFrame";
+import { Bell, Leaf, Settings, ShieldCheck, ScanLine, Recycle, Trophy, MapPin, User, Sparkles, ChevronRight } from "lucide-react";
 import { ScanScreen } from "@/components/mobile/screens/ScanScreen";
-import { ResultScreen } from "@/components/mobile/screens/ResultScreen";
+import { SustainabilityScreen } from "@/components/mobile/screens/SustainabilityScreen";
 import { RewardsScreen } from "@/components/mobile/screens/RewardsScreen";
 import { MapScreen } from "@/components/mobile/screens/MapScreen";
-import { PickupScreen } from "@/components/mobile/screens/PickupScreen";
 import { ProfileScreen } from "@/components/mobile/screens/ProfileScreen";
-import { SustainabilityScreen } from "@/components/mobile/screens/SustainabilityScreen";
 import { useI18n } from "@/lib/i18n";
 
-const Index = () => {
-  const { t, lang, setLang } = useI18n();
+type Tab = "scan" | "impact" | "rewards" | "map" | "profile";
 
-  const screens = [
-    { node: <ScanScreen />, label: "Scan", icon: Camera },
-    { node: <ResultScreen />, label: "AI Result + Bin", icon: Recycle },
-    { node: <SustainabilityScreen />, label: "Sustainability + SDG 11", icon: Leaf },
-    { node: <RewardsScreen />, label: "Rewards", icon: Trophy },
-    { node: <MapScreen />, label: "Recycling Map", icon: MapPin },
-    { node: <PickupScreen />, label: "Pickup", icon: Truck },
-    { node: <ProfileScreen />, label: "Profile + Impact", icon: User },
-  ];
+const tabs: { id: Tab; label: string; icon: any }[] = [
+  { id: "scan", label: "Scan", icon: ScanLine },
+  { id: "impact", label: "Impact", icon: Leaf },
+  { id: "rewards", label: "Rewards", icon: Trophy },
+  { id: "map", label: "Guide", icon: MapPin },
+  { id: "profile", label: "Profile", icon: User },
+];
 
-  const wowFeatures = [
-    { icon: Target, title: "Sustainability Score", desc: "Activity score calculated from recorded scans and points.", tone: "bg-primary/10 text-primary" },
-    { icon: Wind, title: "Carbon Tracker", desc: "Transparent prototype estimate derived from recorded Eco Points.", tone: "bg-dry/10 text-dry" },
-    { icon: Building2, title: "SDG 11 Indicator", desc: "Explains how waste segregation supports SDG 11.", tone: "bg-sdg11/10 text-sdg11" },
-    { icon: BarChart3, title: "Smart Analytics", desc: "Prototype operations dashboard with clearly labelled sample data.", tone: "bg-plastic/10 text-plastic" },
-    { icon: Award, title: "Eco Badges & Levels", desc: "Badges and levels are calculated from recorded scan activity.", tone: "bg-accent/20 text-accent-foreground" },
-    { icon: Globe2, title: "Community Leagues", desc: "Personal progress is shown without fabricated public rankings.", tone: "bg-wet/10 text-wet" },
-  ];
+function getTab(): Tab {
+  const value = window.location.hash.replace("#/", "").replace("#", "") as Tab;
+  return tabs.some((tab) => tab.id === value) ? value : "scan";
+}
+
+function AppHome({ onOpen }: { onOpen: (tab: Tab) => void }) {
+  const history = useMemo(() => {
+    try { return JSON.parse(localStorage.getItem("ecosort-demo-history") || "[]"); } catch { return []; }
+  }, []);
+  const points = history.reduce((sum: number, item: any) => sum + Number(item.points || 0), 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-2xl border-b border-border/60">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
-              <Leaf className="h-5 w-5 text-primary-foreground" />
+    <div className="min-h-screen bg-[#eef8f1]">
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background shadow-2xl">
+        <div className="sticky top-0 z-30 border-b border-border bg-background/95 px-5 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-primary shadow-glow">
+                <Leaf className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="font-display text-lg font-bold leading-none">EcoSort</p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Smart waste segregation</p>
+              </div>
             </div>
-            <div>
-              <p className="font-bold font-display leading-none">{t("appName")}</p>
-              <p className="text-[10px] text-muted-foreground">{t("tagline")}</p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLang(lang === "en" ? "hi" : "en")}
-              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold bg-secondary text-secondary-foreground px-3 py-2 rounded-xl hover:bg-secondary/70 transition"
-            >
-              <Languages className="h-3.5 w-3.5" />
-              {lang === "en" ? "EN / हिंदी" : "हिंदी / EN"}
-            </button>
-            <Link to="/admin" className="text-xs font-bold bg-gradient-primary text-primary-foreground px-4 py-2 rounded-xl inline-flex items-center gap-1.5 shadow-soft hover:shadow-glow transition-all hover:scale-105">
-              {t("admin")} <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 dot-bg opacity-60" />
-        <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-primary/20 blur-3xl animate-float" />
-        <div className="absolute -bottom-32 -left-32 h-[500px] w-[500px] rounded-full bg-accent/25 blur-3xl animate-float" style={{ animationDelay: "2s" }} />
-
-        <div className="relative max-w-[1400px] mx-auto px-6 lg:px-10 pt-16 pb-24 grid lg:grid-cols-2 gap-12 items-center">
-          <div className="animate-fade-in-up">
-            <h1 className="text-5xl lg:text-7xl font-bold font-display leading-[1.02] tracking-tight text-balance">
-              The smartest way to <span className="bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">recycle India</span>.
-            </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-              {t("appName")} uses AI-assisted prototype to classify waste in milliseconds, gamifies civic action with rewards, and gives every municipality a live operations console aligned to <span className="font-semibold text-foreground">UN SDG 11</span>.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#preview" className="group px-6 py-3.5 rounded-2xl bg-gradient-primary text-primary-foreground font-bold text-sm inline-flex items-center gap-2 shadow-glow hover:shadow-elevated hover:-translate-y-0.5 transition-all">
-                {t("launchApp")} <ArrowRight className="h-4 w-4" />
-              </a>
-              <Link to="/admin" className="px-6 py-3.5 rounded-2xl bg-card border border-border font-bold text-sm inline-flex items-center gap-2 hover:bg-secondary hover:-translate-y-0.5 transition-all">
-                <BarChart3 className="h-4 w-4" /> Municipal Console
+            <div className="flex items-center gap-2">
+              <button className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+                <Bell className="h-4 w-4" />
+              </button>
+              <Link to="/admin" className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft" title="Admin">
+                <Settings className="h-4 w-4" />
               </Link>
             </div>
+          </div>
+        </div>
 
-            <div className="mt-12 grid grid-cols-4 gap-4 max-w-xl">
+        <main className="px-5 pb-8 pt-5">
+          <div className="rounded-[1.75rem] bg-gradient-hero p-5 text-primary-foreground shadow-glow">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-75">Good to see you</p>
+                <h1 className="mt-1 font-display text-2xl font-bold">Sort smarter. ♻️</h1>
+                <p className="mt-1 text-xs leading-relaxed opacity-80">Take a photo of waste and get a clear disposal guide.</p>
+              </div>
+              <div className="rounded-2xl bg-primary-foreground/10 p-3">
+                <Recycle className="h-6 w-6 text-accent" />
+              </div>
+            </div>
+            <button onClick={() => onOpen("scan")} className="mt-4 flex w-full items-center justify-between rounded-2xl bg-accent px-4 py-3 text-left text-accent-foreground shadow-elevated">
+              <span className="flex items-center gap-2 text-sm font-bold"><ScanLine className="h-4 w-4" /> Scan waste</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <button onClick={() => onOpen("rewards")} className="rounded-2xl border border-border bg-card p-4 text-left shadow-soft">
+              <Trophy className="h-5 w-5 text-accent-foreground" />
+              <p className="mt-2 text-2xl font-bold font-display">{points}</p>
+              <p className="text-[10px] text-muted-foreground">Eco Points</p>
+            </button>
+            <button onClick={() => onOpen("impact")} className="rounded-2xl border border-border bg-card p-4 text-left shadow-soft">
+              <Leaf className="h-5 w-5 text-primary" />
+              <p className="mt-2 text-2xl font-bold font-display">{history.length}</p>
+              <p className="text-[10px] text-muted-foreground">Scans completed</p>
+            </button>
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-bold">Transparent prototype</p>
+                <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">EcoSort only displays activity that is actually recorded. Location, municipal analytics and environmental impact are not presented as live data unless a real source is connected.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <p className="px-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Quick access</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
               {[
-                { v: "98.4%", l: "AI accuracy" },
-                { v: "142", l: "Wards live" },
-                { v: "84K+", l: "Citizens" },
-                { v: "2.8M", l: "kg diverted" },
-              ].map((s) => (
-                <div key={s.l} className="border-l-2 border-primary/30 pl-3">
-                  <p className="text-2xl lg:text-3xl font-bold font-display bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">{s.v}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">{s.l}</p>
-                </div>
+                ["impact", "Impact", Leaf],
+                ["rewards", "Rewards", Trophy],
+                ["map", "Guide", MapPin],
+              ].map(([id, label, Icon]: any) => (
+                <button key={id} onClick={() => onOpen(id)} className="rounded-2xl border border-border bg-card p-3 text-left">
+                  <Icon className="h-4 w-4 text-primary" />
+                  <p className="mt-2 text-[10px] font-semibold">{label}</p>
+                </button>
               ))}
             </div>
           </div>
+        </main>
 
-          {/* Floating phone preview */}
-          <div className="relative flex justify-center animate-fade-in-up" style={{ animationDelay: "200ms" }}>
-            <div className="relative animate-float">
-              <PhoneFrame glow>
-                <SustainabilityScreen />
-              </PhoneFrame>
-            </div>
-            {/* Floating callouts */}
-            <div className="absolute top-10 -left-2 lg:-left-12 bg-card border border-border rounded-2xl shadow-elevated p-3 flex items-center gap-2 animate-float" style={{ animationDelay: "1s" }}>
-              <div className="h-9 w-9 rounded-xl bg-gradient-sdg11 flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-sdg11-foreground" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">SDG 11</p>
-                <p className="text-xs font-bold font-display">64% achieved</p>
-              </div>
-            </div>
-            <div className="absolute bottom-20 -right-2 lg:-right-10 bg-card border border-border rounded-2xl shadow-elevated p-3 flex items-center gap-2 animate-float" style={{ animationDelay: "2s" }}>
-              <div className="h-9 w-9 rounded-xl bg-gradient-carbon flex items-center justify-center">
-                <Wind className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">CO₂ saved</p>
-                <p className="text-xs font-bold font-display text-primary">142.6 kg</p>
-              </div>
-            </div>
-          </div>
+        <div className="px-5 pb-5">
+          <p className="text-center text-[9px] text-muted-foreground">EcoSort • Working prototype • Built for Solution Challenge</p>
         </div>
-
-        {/* Logo strip */}
-        <div className="relative border-y border-border/60 bg-secondary/20 py-5 overflow-hidden">
-          <div className="max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-wrap items-center justify-between gap-6 text-xs uppercase tracking-wider text-muted-foreground font-bold">
-            <span>Aligned with</span>
-            <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" /> UN SDG 11</span>
-            <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Swachh Bharat</span>
-            <span className="inline-flex items-center gap-1.5"><Globe2 className="h-3.5 w-3.5" /> Smart Cities Mission</span>
-            <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" /> On-device AI</span>
-            <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> AI-ready architecture</span>
-          </div>
-        </div>
-      </section>
-
-      {/* WOW Features */}
-      <section className="relative py-24">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="text-center max-w-2xl mx-auto mb-14">
-            <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">The WOW Factor</p>
-            <h2 className="text-4xl lg:text-5xl font-bold font-display mt-3 text-balance">Built for impact, designed to delight.</h2>
-            <p className="text-muted-foreground mt-4 text-lg">Every feature ties back to a measurable environmental outcome.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {wowFeatures.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <div key={f.title} className="group relative bg-card border border-border rounded-3xl p-6 hover:shadow-elevated hover:-translate-y-1 transition-all overflow-hidden">
-                  <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-primary/5 blur-2xl group-hover:bg-primary/15 transition-colors" />
-                  <div className={`relative h-12 w-12 rounded-2xl ${f.tone} flex items-center justify-center`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <h3 className="relative mt-4 font-bold font-display text-lg">{f.title}</h3>
-                  <p className="relative mt-1.5 text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* All screens preview */}
-      <section id="preview" className="bg-gradient-mint py-24 relative overflow-hidden">
-        <div className="absolute inset-0 grid-bg opacity-30" />
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="relative text-center max-w-2xl mx-auto mb-16">
-            <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">The Citizen App</p>
-            <h2 className="text-4xl lg:text-5xl font-bold font-display mt-3 text-balance">From scan to impact in 5 seconds.</h2>
-            <p className="text-muted-foreground mt-4 text-lg">Working prototype screens with clear demo labels. Multi-language. Built for India.</p>
-          </div>
-
-          <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-items-center">
-            {screens.map((s) => (
-              <PhoneFrame key={s.label} label={s.label}>
-                {s.node}
-              </PhoneFrame>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Admin teaser */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute top-0 right-0 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">Municipal Console</p>
-            <h2 className="text-4xl lg:text-5xl font-bold font-display mt-3 text-balance">A command center for cleaner cities.</h2>
-            <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
-              A prototype operations console showing sample analytics. It does not claim live municipal data until a municipal data source is connected.
-            </p>
-            <ul className="mt-7 grid grid-cols-2 gap-3 text-sm">
-              {["Waste analytics", "Area heatmap", "Complaint SLAs", "Citizen reports", "SDG 11 tracker", "Carbon offset", "Community leagues", "Export CSV"].map((f) => (
-                <li key={f} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/40">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" /> <span className="font-medium">{f}</span>
-                </li>
-              ))}
-            </ul>
-            <Link to="/admin" className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-gradient-primary text-primary-foreground font-bold text-sm shadow-glow hover:shadow-elevated hover:-translate-y-0.5 transition-all">
-              Open dashboard <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="relative rounded-[1.75rem] overflow-hidden border border-border shadow-premium bg-card">
-            <div className="h-9 bg-secondary border-b border-border flex items-center gap-1.5 px-4">
-              <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-wet/60" />
-              <span className="h-2.5 w-2.5 rounded-full bg-primary/60" />
-              <span className="ml-3 text-[10px] font-mono text-muted-foreground">ecosort.local/admin</span>
-            </div>
-            <div className="aspect-[16/10] bg-gradient-to-br from-secondary via-card to-secondary p-5 grid grid-cols-3 gap-2.5">
-              {[Recycle, Trophy, MapPin, Truck, Leaf, User].map((I, i) => (
-                <div key={i} className="bg-card rounded-xl p-3 border border-border flex flex-col gap-2 hover:shadow-soft transition">
-                  <div className="flex items-center justify-between">
-                    <I className="h-4 w-4 text-primary" />
-                    <span className="text-[8px] font-bold text-primary">+18%</span>
-                  </div>
-                  <div className="h-1.5 w-2/3 bg-secondary rounded-full" />
-                  <div className="h-6 bg-gradient-to-r from-primary/40 to-accent/40 rounded-md" />
-                  <div className="flex gap-1 items-end h-8">
-                    {[40, 70, 50, 80, 60, 90].map((h, j) => (
-                      <div key={j} className="flex-1 bg-gradient-to-t from-primary/60 to-primary/30 rounded-sm" style={{ height: `${h}%` }} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 relative">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
-          <div className="relative rounded-[2rem] bg-gradient-hero text-primary-foreground p-10 lg:p-16 overflow-hidden shadow-premium">
-            <div className="absolute inset-0 dot-bg opacity-20" />
-            <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-accent/30 blur-3xl" />
-            <div className="relative grid lg:grid-cols-3 gap-8 items-center">
-              <div className="lg:col-span-2">
-                <p className="text-xs uppercase tracking-[0.2em] font-bold opacity-80">Ready to scale</p>
-                <h2 className="text-3xl lg:text-5xl font-bold font-display mt-3 leading-tight text-balance">Cleaner cities start with one scan.</h2>
-                <p className="mt-4 text-base opacity-90 max-w-2xl">Try the working EcoSort prototype and see exactly which data is real, local, or demonstration-only.</p>
-              </div>
-              <div className="flex lg:justify-end">
-                <a href="#preview" className="px-6 py-3.5 rounded-2xl bg-accent text-accent-foreground font-bold text-sm inline-flex items-center gap-2 shadow-elevated hover:scale-105 transition">
-                  Try the demo <ArrowRight className="h-4 w-4" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border py-10 bg-secondary/30">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 flex flex-wrap justify-between items-center gap-4 text-xs text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Leaf className="h-3.5 w-3.5 text-primary-foreground" />
-            </div>
-            <p className="font-semibold">© 2025 EcoSort • Built for Google Solution Challenge</p>
-          </div>
-          <p>Made with 🌱 for cleaner Indian cities</p>
-        </div>
-      </footer>
+      </div>
     </div>
   );
+}
+
+function AppShell({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
+  const screens: Record<Tab, React.ReactNode> = {
+    scan: <ScanScreen />,
+    impact: <SustainabilityScreen />,
+    rewards: <RewardsScreen />,
+    map: <MapScreen />,
+    profile: <ProfileScreen />,
+  };
+
+  useEffect(() => {
+    const handleHash = () => setTab(getTab());
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [setTab]);
+
+  return (
+    <div className="min-h-screen bg-[#eef8f1]">
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-background shadow-2xl">
+        {screens[tab]}
+      </div>
+    </div>
+  );
+}
+
+const Index = () => {
+  const [tab, setTab] = useState<Tab>(getTab);
+  const [home, setHome] = useState(false);
+
+  useEffect(() => {
+    const handleHash = () => {
+      const value = window.location.hash;
+      if (!value || value === "#home") setHome(true);
+      else { setHome(false); setTab(getTab()); }
+    };
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
+  const openTab = (next: Tab) => {
+    setHome(false);
+    setTab(next);
+    window.location.hash = next;
+  };
+
+  return home ? <AppHome onOpen={openTab} /> : <AppShell tab={tab} setTab={setTab} />;
 };
 
 export default Index;
