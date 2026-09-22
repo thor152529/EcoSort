@@ -7,21 +7,14 @@ import { auth } from "./config";
 import { createUserProfile } from "./firestore";
 
 export const ensureAuthenticatedUser = async (): Promise<User> => {
-  if (auth.currentUser) {
-    await createUserProfile(auth.currentUser.uid, {
-      email: auth.currentUser.email ?? null,
-      displayName: auth.currentUser.displayName ?? "Eco Warrior",
-    });
-    return auth.currentUser;
-  }
+  const user = auth.currentUser ?? (await signInAnonymously(auth)).user;
 
-  const credential = await signInAnonymously(auth);
-  await createUserProfile(credential.user.uid, {
-    email: null,
-    displayName: "Eco Warrior",
+  await createUserProfile(user.uid, {
+    name: user.displayName ?? "Eco Warrior",
+    email: user.email ?? null,
   });
 
-  return credential.user;
+  return user;
 };
 
 export const subscribeToAuth = (callback: (user: User | null) => void) =>
