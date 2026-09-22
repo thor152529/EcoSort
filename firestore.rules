@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow create: if isOwner(userId)
+        && request.resource.data.role == "user"
+        && request.resource.data.ecoPoints == 0
+        && request.resource.data.totalScans == 0;
+      allow read: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.ecoPoints >= resource.data.ecoPoints
+        && request.resource.data.ecoPoints <= resource.data.ecoPoints + 50
+        && request.resource.data.totalScans >= resource.data.totalScans
+        && request.resource.data.totalScans <= resource.data.totalScans + 1;
+      allow delete: if false;
+    }
+
+    match /scans/{scanId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.pointsEarned >= 0
+        && request.resource.data.pointsEarned <= 50;
+      allow read: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /pickupRequests/{requestId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
