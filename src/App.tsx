@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,8 +8,19 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Admin from "./pages/Admin.tsx";
 import { I18nProvider } from "@/lib/i18n";
+import { ensureAuthenticatedUser } from "./firebase/auth";
 
 const queryClient = new QueryClient();
+
+function FirebaseSession() {
+  useEffect(() => {
+    ensureAuthenticatedUser().catch((error) => {
+      console.error("Firebase startup error:", error);
+    });
+  }, []);
+
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -16,11 +28,11 @@ const App = () => (
       <I18nProvider>
         <Toaster />
         <Sonner />
+        <FirebaseSession />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/admin" element={<Admin />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
