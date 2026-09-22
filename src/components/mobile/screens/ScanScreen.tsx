@@ -1,45 +1,95 @@
 import { useRef, useState } from "react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
-import { Zap, Image as ImageIcon, ScanLine, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
+import { Zap, Image as ImageIcon, ScanLine, Sparkles, CheckCircle2, Loader2, Camera, RotateCcw, ShieldCheck, History, Award, Recycle, ChevronRight } from "lucide-react";
 import { ensureAuthenticatedUser } from "@/firebase/auth";
 import { saveWasteScan } from "@/firebase/firestore";
-import { analyzeWasteImage, type WasteAnalysis } from "@/firebase/ai";
+import { analyzeWasteImage, createDemoWasteAnalysis, type WasteAnalysis } from "@/firebase/ai";
 import { toast } from "sonner";
 
+type HistoryItem = WasteAnalysis & { at: string };
+const HISTORY_KEY = "ecosort-demo-history";
+
+function readHistory(): HistoryItem[] {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; }
+}
+
+function categoryTone(category: WasteAnalysis["category"]) {
+  if (category === "plastic") return "bg-plastic/10 text-plastic";
+  if (category === "wet") return "bg-wet/10 text-wet";
+  if (category === "e-waste") return "bg-ewaste/10 text-ewaste";
+  return "bg-dry/10 text-dry";
+}
+
 export function ScanScreen() {
-  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [analysis, setAnalysis] = useState<WasteAnalysis | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [demoMode, setDemoMode] = useState(() => localStorage.getItem("ecosort-demo-mode") !== "off");
+  const [history, setHistory] = useState<HistoryItem[]>(readHistory);
+  const [status, setStatus] = useState("Ready to scan");
 
   const handleImage = async (file?: File) => {
     if (!file || saving) return;
-    setSaving(true);
-    setSaved(false);
-    setAnalysis(null);
+    setSaving(true); setSaved(false); setAnalysis(null); setStatus("Analyzing image...");
+    setPreview(URL.createObjectURL(file));
 
     try {
-      const result = await analyzeWasteImage(file);
-      const user = await ensureAuthenticatedUser();
-      await saveWasteScan(user.uid, result.item, result.points, result.bin, result.confidence / 100);
+      let result: WasteAnalysis;
+      if (demoMode) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        result = createDemoWasteAnalysis(file.name + file.size);
+      } else {
+        try {
+          result = await analyzeWasteImage(file);
+        } catch (error) {
+          console.warn("Live AI unavailable; using labelled demo result.", error);
+          result = createDemoWasteAnalysis(file.name + file.size);
+          toast.info("Firebase AI Logic is not ready. Showing a clearly labelled demo result.");
+        }
+      }
+
       setAnalysis(result);
+
+      try {
+        const user = await ensureAuthenticatedUser();
+        await saveWasteScan(user.uid, result.item, result.points, result.bin, result.confidence / 100);
+        setStatus("Saved to Firebase");
+      } catch (error) {
+        console.warn("Firebase save unavailable; storing demo history locally.", error);
+        const item = { ...result, at: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) };
+        const next = [item, ...history].slice(0, 5);
+        setHistory(next);
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+        setStatus("Saved locally for demo");
+      }
+
       setSaved(true);
-      toast.success(`AI detected ${result.item} • +${result.points} Eco Points`);
+      toast.success((result.source === "demo" ? "Demo result" : "AI result") + ": " + result.item + " • +" + result.points + " Eco Points");
     } catch (error) {
       console.error(error);
-      toast.error(error instanceof Error ? error.message : "AI scan failed. Check Firebase AI Logic setup.");
+      setStatus("Scan failed");
+      toast.error(error instanceof Error ? error.message : "Scan failed.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleScan = () => fileInputRef.current?.click();
+  const toggleDemo = () => {
+    const next = !demoMode;
+    setDemoMode(next);
+    localStorage.setItem("ecosort-demo-mode", next ? "on" : "off");
+    toast.success(next ? "Demo AI enabled — presentation data is ready." : "Live AI enabled — Firebase AI Logic will be used.");
+  };
+
+  const reset = () => {
+    setAnalysis(null); setPreview(null); setSaved(false); setStatus("Ready to scan");
+  };
 
   return (
-    <div className="relative h-full bg-gradient-to-b from-foreground via-foreground to-primary/90 text-primary-foreground pb-24 overflow-hidden">
+    <div className="relative min-h-full bg-gradient-to-b from-foreground via-foreground to-primary/90 text-primary-foreground pb-24 overflow-y-auto">
       <StatusBar dark />
       <input
         ref={fileInputRef}
@@ -54,95 +104,102 @@ export function ScanScreen() {
         }}
       />
 
-      <div className="px-6 pt-3 pb-2 flex items-center justify-between">
+      <div className="px-5 pt-3 pb-2 flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="h-3 w-3 text-accent" />
-            <p className="text-[10px] opacity-80 uppercase tracking-wider font-bold">EcoSort AI</p>
-          </div>
-          <h2 className="text-lg font-bold font-display">{t("scanItem")}</h2>
+          <div className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-accent" /><p className="text-[10px] opacity-80 uppercase tracking-[0.16em] font-bold">EcoSort AI</p></div>
+          <h2 className="text-xl font-bold font-display">Smart Waste Scanner</h2>
+          <p className="text-[10px] opacity-60 mt-0.5">Scan • classify • dispose • earn</p>
         </div>
-        <button className="h-9 w-9 rounded-full bg-primary-foreground/10 flex items-center justify-center backdrop-blur border border-primary-foreground/10">
-          <Zap className="h-4 w-4 text-accent" />
+        <button type="button" onClick={toggleDemo} className="flex flex-col items-center gap-0.5 rounded-xl bg-primary-foreground/10 border border-primary-foreground/15 px-2.5 py-2 backdrop-blur">
+          <Zap className="h-3.5 w-3.5 text-accent" />
+          <span className="text-[8px] font-bold">${demoMode ? "DEMO" : "LIVE"}</span>
         </button>
       </div>
 
-      <div className="mx-5 mt-3 relative aspect-[3/4] rounded-3xl overflow-hidden bg-foreground/60 border border-primary-foreground/20 shadow-elevated">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-foreground/40 to-accent/20" />
+      <div className="mx-5 mt-2 rounded-2xl bg-accent/10 border border-accent/20 px-3 py-2.5 flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 text-accent flex-shrink-0" />
+        <div>
+          <p className="text-[10px] font-bold">${demoMode ? "Presentation Demo Mode" : "Live Gemini Mode"}</p>
+          <p className="text-[9px] opacity-65 leading-snug">${demoMode ? "Realistic sample results keep the complete UX working without Firebase AI Logic." : "Uses Firebase AI Logic; setup errors fall back to clearly labelled demo data."}</p>
+        </div>
+      </div>
+
+      <div className="mx-5 mt-3 relative aspect-[3/4] max-h-[390px] rounded-[2rem] overflow-hidden bg-foreground/60 border border-primary-foreground/20 shadow-premium">
+        {preview ? <img src={preview} alt="Selected waste" className="absolute inset-0 h-full w-full object-cover opacity-70" /> : <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-foreground/50 to-accent/20" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-transparent to-foreground/20" />
         <div className="absolute inset-0 grid-bg opacity-20" />
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-28 w-28 rounded-2xl bg-accent/20 backdrop-blur-md border-2 border-accent flex items-center justify-center text-5xl animate-float shadow-glow">
-            {analysis ? "♻️" : "🥤"}
-          </div>
+          {!preview && <div className="h-28 w-28 rounded-[2rem] bg-accent/15 backdrop-blur-md border-2 border-accent/80 flex items-center justify-center text-5xl shadow-glow animate-float">♻️</div>}
+          {preview && saving && <Loader2 className="h-12 w-12 text-accent animate-spin" />}
         </div>
-
-        {["top-4 left-4 border-l-2 border-t-2", "top-4 right-4 border-r-2 border-t-2", "bottom-4 left-4 border-l-2 border-b-2", "bottom-4 right-4 border-r-2 border-b-2"].map((c) => (
-          <div key={c} className={`absolute h-8 w-8 border-accent rounded-lg ${c}`} />
-        ))}
-
-        <div className="absolute left-4 right-4 top-12 h-0.5 bg-accent shadow-glow animate-scan rounded-full" />
-        <div className="absolute left-4 right-4 top-12 h-12 bg-gradient-to-b from-accent/30 to-transparent animate-scan rounded-md blur-sm" />
-
-        <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 bg-foreground/70 backdrop-blur rounded-xl px-3 py-2 border border-primary-foreground/10">
-          {saving ? <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> : <ScanLine className="h-3.5 w-3.5 text-accent animate-pulse" />}
-          <span className="text-[11px] font-medium">
-            {saving ? "Analyzing with Gemini..." : saved ? "Saved to Firebase" : t("pointCamera")}
-          </span>
-          <span className="ml-auto text-[10px] font-mono text-accent">
-            {analysis ? `${analysis.confidence.toFixed(1)}% visual confidence` : "AI"}
-          </span>
+        {saving && <div className="absolute left-4 right-4 top-1/2 h-0.5 bg-accent shadow-glow animate-scan rounded-full" />}
+        <div className="absolute left-3 right-3 bottom-3 flex items-center gap-2 bg-foreground/75 backdrop-blur-xl rounded-xl px-3 py-2.5 border border-primary-foreground/10">
+          {saving ? <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> : <ScanLine className="h-3.5 w-3.5 text-accent" />}
+          <span className="text-[10px] font-semibold">{status}</span>
+          <span className="ml-auto text-[9px] font-mono text-accent">${analysis ? analysis.confidence.toFixed(1) + "% confidence" : "AI READY"}</span>
         </div>
       </div>
 
       {analysis && (
-        <div className="mx-5 mt-3 rounded-2xl bg-card text-foreground p-4 shadow-elevated border border-border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">AI Detection</p>
-              <p className="text-lg font-bold font-display">{analysis.item}</p>
-              <p className="text-xs text-muted-foreground capitalize">{analysis.category} • {analysis.bin}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">Evidence: {analysis.evidence}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-bold text-primary">+{analysis.points}</p>
-              <p className="text-[10px] text-muted-foreground">Eco Points</p>
+        <div className="mx-5 mt-3 rounded-[1.5rem] bg-card text-foreground shadow-premium border border-border overflow-hidden animate-fade-in-up">
+          <div className="bg-gradient-primary text-primary-foreground p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Sparkles className="h-3 w-3 text-accent" />
+                  <p className="text-[9px] uppercase tracking-[0.16em] opacity-75 font-bold">AI Detection</p>
+                  <span className="px-1.5 py-0.5 rounded-full bg-primary-foreground/15 text-[8px] font-bold">${analysis.source === "demo" ? "DEMO RESULT" : "LIVE"}</span>
+                </div>
+                <p className="text-xl font-bold font-display">{analysis.item}</p>
+                <p className="text-[10px] opacity-75 mt-0.5">Visual classification • {analysis.category}</p>
+              </div>
+              <div className="text-right"><p className="text-3xl font-bold font-display text-accent">+{analysis.points}</p><p className="text-[9px] opacity-75">Eco Points</p></div>
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">{analysis.tip}</p>
-          {analysis.points === 0 && (
-            <p className="mt-2 text-[11px] font-semibold text-amber-700">No points awarded because the image was not reliable enough to classify.</p>
-          )}
+
+          <div className="p-4 space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-2xl bg-secondary/60 border border-border p-3"><p className="text-[9px] uppercase tracking-wider text-muted-foreground">Category</p><p className={`mt-1 inline-flex px-2 py-1 rounded-lg text-[10px] font-bold capitalize ${categoryTone(analysis.category)}`}>{analysis.category}</p></div>
+              <div className="rounded-2xl bg-secondary/60 border border-border p-3"><p className="text-[9px] uppercase tracking-wider text-muted-foreground">Dispose in</p><p className="mt-1 text-sm font-bold">{analysis.bin}</p></div>
+            </div>
+
+            <div className="rounded-2xl border border-border p-3">
+              <div className="flex items-center justify-between"><p className="text-[10px] font-bold">Confidence</p><p className="text-[10px] font-bold text-primary">{analysis.confidence.toFixed(1)}%</p></div>
+              <div className="mt-2 h-2 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${analysis.confidence}%` }} /></div>
+              <p className="text-[9px] text-muted-foreground mt-1.5">${analysis.source === "demo" ? "Demo confidence — not a measured model probability." : "Live visual confidence — not a guaranteed probability."}</p>
+            </div>
+
+            <div className="rounded-2xl bg-secondary/50 p-3 flex items-start gap-2"><Recycle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="text-[10px] font-bold">Why this result?</p><p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{analysis.evidence}</p></div></div>
+            <div className="rounded-2xl bg-gradient-mint p-3 border border-primary/10"><p className="text-[10px] font-bold text-primary">Disposal tip</p><p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{analysis.tip}</p></div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={reset} className="rounded-xl bg-secondary text-secondary-foreground py-2.5 text-[10px] font-bold inline-flex items-center justify-center gap-1.5"><RotateCcw className="h-3.5 w-3.5" /> Scan again</button>
+              <button type="button" onClick={() => toast.success("Result shared from EcoSort")} className="rounded-xl bg-primary text-primary-foreground py-2.5 text-[10px] font-bold inline-flex items-center justify-center gap-1.5"><ChevronRight className="h-3.5 w-3.5" /> Continue</button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="absolute bottom-24 left-0 right-0 flex items-center justify-around px-10">
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="h-11 w-11 rounded-2xl bg-primary-foreground/10 backdrop-blur border border-primary-foreground/10 flex items-center justify-center"
-          aria-label="Choose image"
-        >
-          <ImageIcon className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={handleScan}
-          disabled={saving}
-          className="relative h-16 w-16 rounded-full bg-accent flex items-center justify-center shadow-glow disabled:opacity-60"
-          aria-label="Scan waste"
-        >
-          <span className="absolute inset-0 rounded-full bg-accent animate-pulse-ring" />
-          <div className="h-12 w-12 rounded-full border-[3px] border-foreground bg-accent flex items-center justify-center text-[10px] font-bold text-accent-foreground">
-            {saving ? "..." : "SCAN"}
+      {!analysis && (
+        <>
+          <div className="mx-5 mt-3 grid grid-cols-3 gap-2">
+            {[{ icon: Camera, title: "Photo", sub: "Camera ready" }, { icon: Recycle, title: "5 bins", sub: "Smart routing" }, { icon: Award, title: "25 pts", sub: "Max / scan" }].map(({ icon: Icon, title, sub }) => (
+              <div key={title} className="rounded-2xl bg-primary-foreground/8 border border-primary-foreground/10 p-2.5 text-center"><Icon className="h-4 w-4 text-accent mx-auto" /><p className="text-[10px] font-bold mt-1">{title}</p><p className="text-[8px] opacity-55">{sub}</p></div>
+            ))}
           </div>
-        </button>
-        <button
-          type="button"
-          onClick={handleScan}
-          className="h-11 w-11 rounded-2xl bg-accent/20 backdrop-blur border border-accent/40 flex items-center justify-center text-[10px] font-bold text-accent"
-        >
-          AI
-        </button>
+          <div className="mx-5 mt-3 rounded-2xl bg-primary-foreground/8 border border-primary-foreground/10 p-3">
+            <div className="flex items-center gap-2"><History className="h-4 w-4 text-accent" /><p className="text-[10px] font-bold">Recent demo scans</p><span className="ml-auto text-[8px] opacity-50">{history.length}/5</span></div>
+            {history.length === 0 ? <p className="text-[9px] opacity-55 mt-2">Your first scan will appear here.</p> : <div className="mt-2 space-y-1.5">{history.slice(0, 3).map((item, i) => (
+              <div key={`${item.at}-${i}`} className="flex items-center gap-2 rounded-xl bg-primary-foreground/5 px-2.5 py-2"><div className="h-7 w-7 rounded-lg bg-accent/15 flex items-center justify-center"><Recycle className="h-3.5 w-3.5 text-accent" /></div><div className="flex-1 min-w-0"><p className="text-[9px] font-bold truncate">{item.item}</p><p className="text-[8px] opacity-50">{item.at} • ${item.source === "demo" ? "Demo" : "Live"}</p></div><span className="text-[9px] font-bold text-accent">+{item.points}</span></div>
+            ))}</div>}
+          </div>
+        </>
+      )}
+
+      <div className="px-5 mt-3 pb-3 flex items-center justify-around">
+        <button type="button" onClick={() => fileInputRef.current?.click()} className="h-11 w-11 rounded-2xl bg-primary-foreground/10 backdrop-blur border border-primary-foreground/10 flex items-center justify-center" aria-label="Choose image"><ImageIcon className="h-4 w-4" /></button>
+        <button type="button" onClick={() => fileInputRef.current?.click()} disabled={saving} className="relative h-[68px] w-[68px] rounded-full bg-accent flex items-center justify-center shadow-glow disabled:opacity-60" aria-label="Scan waste"><span className="absolute inset-0 rounded-full bg-accent animate-pulse-ring" /><div className="h-[52px] w-[52px] rounded-full border-[3px] border-foreground bg-accent flex items-center justify-center text-[10px] font-bold text-accent-foreground">{saving ? "..." : "SCAN"}</div></button>
+        <button type="button" onClick={() => toast("Tip: use good lighting and place one item in the frame.")} className="h-11 w-11 rounded-2xl bg-accent/20 backdrop-blur border border-accent/40 flex items-center justify-center text-accent"><Sparkles className="h-4 w-4" /></button>
       </div>
 
       <BottomNav active="scan" />
