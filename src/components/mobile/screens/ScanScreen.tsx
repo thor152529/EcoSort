@@ -89,7 +89,7 @@ export function ScanScreen() {
             {saving ? "Analyzing with Gemini..." : saved ? "Saved to Firebase" : t("pointCamera")}
           </span>
           <span className="ml-auto text-[10px] font-mono text-accent">
-            {analysis ? `${analysis.confidence.toFixed(1)}%` : "AI"}
+            {analysis ? `${analysis.confidence.toFixed(1)}% visual confidence` : "AI"}
           </span>
         </div>
       </div>
@@ -101,6 +101,7 @@ export function ScanScreen() {
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">AI Detection</p>
               <p className="text-lg font-bold font-display">{analysis.item}</p>
               <p className="text-xs text-muted-foreground capitalize">{analysis.category} • {analysis.bin}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Evidence: {analysis.evidence}</p>
             </div>
             <div className="text-right">
               <p className="text-xl font-bold text-primary">+{analysis.points}</p>
@@ -108,6 +109,9 @@ export function ScanScreen() {
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">{analysis.tip}</p>
+          {analysis.points === 0 && (
+            <p className="mt-2 text-[11px] font-semibold text-amber-700">No points awarded because the image was not reliable enough to classify.</p>
+          )}
         </div>
       )}
 
