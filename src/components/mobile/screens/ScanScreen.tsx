@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { StatusBar } from "../StatusBar";
 import { BottomNav } from "../BottomNav";
-import { Zap, Image as ImageIcon, ScanLine, Sparkles, CheckCircle2, Loader2, Camera, RotateCcw, ShieldCheck, History, Award, Recycle, ChevronRight } from "lucide-react";
+import { Image as ImageIcon, ScanLine, Sparkles, CheckCircle2, Loader2, Camera, RotateCcw, ShieldCheck, History, Award, Recycle, ChevronRight } from "lucide-react";
 import { ensureAuthenticatedUser } from "@/firebase/auth";
 import { saveWasteScan } from "@/firebase/firestore";
 import { analyzeWasteImage, createDemoWasteAnalysis, type WasteAnalysis } from "@/firebase/ai";
@@ -27,7 +27,6 @@ export function ScanScreen() {
   const [saved, setSaved] = useState(false);
   const [analysis, setAnalysis] = useState<WasteAnalysis | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [demoMode, setDemoMode] = useState(() => localStorage.getItem("ecosort-demo-mode") !== "off");
   const [history, setHistory] = useState<HistoryItem[]>(readHistory);
   const [status, setStatus] = useState("Ready to scan");
   const [demoItem, setDemoItem] = useState("Plastic Bottle");
@@ -38,19 +37,7 @@ export function ScanScreen() {
     setPreview(URL.createObjectURL(file));
 
     try {
-      let result: WasteAnalysis;
-      if (demoMode) {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        result = createDemoWasteAnalysis(demoItem);
-      } else {
-        try {
-          result = await analyzeWasteImage(file);
-        } catch (error) {
-          console.warn("Live AI unavailable; using labelled demo result.", error);
-          result = createDemoWasteAnalysis(demoItem);
-          toast.info("Live AI is unavailable. Select the matching demo item for this photo.");
-        }
-      }
+      const result: WasteAnalysis = await analyzeWasteImage(file);
 
       setAnalysis(result);
 
@@ -76,13 +63,6 @@ export function ScanScreen() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const toggleDemo = () => {
-    const next = !demoMode;
-    setDemoMode(next);
-    localStorage.setItem("ecosort-demo-mode", next ? "on" : "off");
-    toast.success(next ? "Demo AI enabled — presentation data is ready." : "Live AI enabled — Firebase AI Logic will be used.");
   };
 
   const reset = () => {
@@ -120,8 +100,8 @@ export function ScanScreen() {
       <div className="mx-5 mt-2 rounded-2xl bg-accent/10 border border-accent/20 px-3 py-2.5 flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-accent flex-shrink-0" />
         <div>
-          <p className="text-[10px] font-bold">${demoMode ? "Presentation Demo Mode" : "Live Gemini Mode"}</p>
-          <p className="text-[9px] opacity-65 leading-snug">${demoMode ? "Demo mode never guesses from pixels. Choose the item shown in your photo; LIVE mode is reserved for real AI classification." : "Uses Firebase AI Logic only when LIVE AI is configured. Demo mode never pretends to be an AI prediction."}</p>
+          <p className="text-[10px] font-bold">Working Demo Mode</p>
+          <p className="text-[9px] opacity-65 leading-snug">The uploaded photo is displayed, and the selected scenario controls the demo result. Live image AI is not enabled yet.</p>
         </div>
       </div>
 
