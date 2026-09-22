@@ -6,30 +6,41 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
     match /users/{userId} {
-      allow create: if signedIn() && request.auth.uid == userId;
-      allow read: if signedIn() && request.auth.uid == userId;
-      allow update: if signedIn() && request.auth.uid == userId;
+      allow create: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow update: if isOwner(userId)
+        && request.resource.data.ecoPoints >= resource.data.ecoPoints
+        && request.resource.data.ecoPoints <= resource.data.ecoPoints + 50
+        && request.resource.data.totalScans >= resource.data.totalScans
+        && request.resource.data.totalScans <= resource.data.totalScans + 1;
       allow delete: if false;
     }
 
     match /scans/{scanId} {
-      allow create: if signedIn() &&
-        request.resource.data.userId == request.auth.uid;
-      allow read: if signedIn() &&
-        resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.pointsEarned >= 0
+        && request.resource.data.pointsEarned <= 50;
+      allow read: if signedIn()
+        && resource.data.userId == request.auth.uid;
       allow update, delete: if false;
     }
 
     match /pickupRequests/{requestId} {
-      allow create: if signedIn() &&
-        request.resource.data.userId == request.auth.uid;
-      allow read: if signedIn() &&
-        resource.data.userId == request.auth.uid;
-      allow update: if signedIn() &&
-        resource.data.userId == request.auth.uid &&
-        request.resource.data.userId == request.auth.uid;
-      allow delete: if false;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
