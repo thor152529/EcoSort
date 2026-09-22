@@ -19,6 +19,7 @@ export function BottomNav({ active = "scan" }: { active?: string }) {
           return (
             <button
               key={it.id}
+              onClick={() => { window.location.hash = it.id; }}
               className="relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-2xl transition-all"
             >
               {isActive && (
