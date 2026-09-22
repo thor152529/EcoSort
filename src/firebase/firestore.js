@@ -1,9 +1,9 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
   increment,
+  runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
@@ -50,20 +50,28 @@ export const saveWasteScan = async (
   if (!userId) throw new Error("No authenticated user.");
 
   const userRef = doc(db, "users", userId);
+  const scanRef = doc(collection(db, "scans"));
 
-  await addDoc(collection(db, "scans"), {
-    userId,
-    wasteType,
-    bin,
-    confidence,
-    pointsEarned: points,
-    timestamp: serverTimestamp(),
-  });
+  await runTransaction(db, async (transaction) => {
+    const userSnapshot = await transaction.get(userRef);
+    if (!userSnapshot.exists()) {
+      throw new Error("User profile not found.");
+    }
 
-  await updateDoc(userRef, {
-    ecoPoints: increment(points),
-    totalScans: increment(1),
-    updatedAt: serverTimestamp(),
+    transaction.set(scanRef, {
+      userId,
+      wasteType,
+      bin,
+      confidence,
+      pointsEarned: points,
+      timestamp: serverTimestamp(),
+    });
+
+    transaction.update(userRef, {
+      ecoPoints: increment(points),
+      totalScans: increment(1),
+      updatedAt: serverTimestamp(),
+    });
   });
 };
 
