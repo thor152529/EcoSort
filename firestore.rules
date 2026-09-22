@@ -29,7 +29,6 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.pointsEarned >= 0
-        && request.resource.data.pointsEarned >= 0
         && request.resource.data.pointsEarned <= 25
         && request.resource.data.confidence >= 0
         && request.resource.data.confidence <= 1;
