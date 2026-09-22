@@ -91,7 +91,7 @@ export function AdminDashboard() {
             </div>
             <div>
               <p className="font-bold font-display text-base leading-none">EcoSort</p>
-              <p className="text-[10px] text-muted-foreground">Municipal Console</p>
+              <p className="text-[10px] text-muted-foreground">Prototype Operations Console</p>
             </div>
           </div>
           <div className="hidden md:flex items-center gap-2 bg-secondary rounded-xl px-3 py-2 w-80">
@@ -113,12 +113,12 @@ export function AdminDashboard() {
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-primary font-bold">Overview</p>
-            <h1 className="text-3xl font-bold font-display mt-1">Waste Operations — Bengaluru</h1>
-            <p className="text-sm text-muted-foreground">Real-time analytics across 142 wards • Live updates</p>
+            <h1 className="text-3xl font-bold font-display mt-1">Waste Operations — Prototype</h1>
+            <p className="text-sm text-muted-foreground">Sample analytics • Not live municipal data</p>
           </div>
           <div className="flex gap-2">
             <button className="px-3 py-2 text-xs font-semibold rounded-xl border border-border bg-card inline-flex items-center gap-1.5"><Filter className="h-3.5 w-3.5" /> Last 7 days</button>
-            <button className="px-3 py-2 text-xs font-semibold rounded-xl bg-gradient-primary text-primary-foreground inline-flex items-center gap-1.5 shadow-soft hover:shadow-glow transition"><Download className="h-3.5 w-3.5" /> Export</button>
+            <button className="px-3 py-2 text-xs font-semibold rounded-xl bg-gradient-primary text-primary-foreground inline-flex items-center gap-1.5 shadow-soft hover:shadow-glow transition"><Download className="h-3.5 w-3.5" /> Export sample</button>
           </div>
         </div>
 
@@ -128,7 +128,7 @@ export function AdminDashboard() {
             <div className="absolute -right-6 -top-6 opacity-20"><Building2 className="h-32 w-32" /></div>
             <div className="relative">
               <div className="flex items-center gap-1.5">
-                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sdg11-foreground/20">UN SDG 11</span>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-sdg11-foreground/20">UN SDG 11 (prototype)</span>
                 <Target className="h-3 w-3" />
               </div>
               <p className="text-xs uppercase tracking-wider opacity-80 mt-2">Sustainable Cities</p>
@@ -136,14 +136,14 @@ export function AdminDashboard() {
               <div className="mt-3 h-2 bg-sdg11-foreground/20 rounded-full overflow-hidden">
                 <div className="h-full bg-sdg11-foreground rounded-full" style={{ width: "64%" }} />
               </div>
-              <p className="text-[10px] opacity-80 mt-2">+8% vs last quarter • Goal 2030: 90%</p>
+              <p className="text-[10px] opacity-80 mt-2">+8% vs last quarter • Prototype target</p>
             </div>
           </div>
 
           <div className="bg-gradient-carbon text-primary-foreground rounded-2xl p-5 relative overflow-hidden shadow-soft">
             <div className="absolute -right-6 -top-6 opacity-20"><Wind className="h-32 w-32" /></div>
             <div className="relative">
-              <p className="text-xs uppercase tracking-wider opacity-80">Carbon Offset (city-wide)</p>
+              <p className="text-xs uppercase tracking-wider opacity-80">Carbon estimate (sample)</p>
               <div className="flex items-baseline gap-1 mt-1">
                 <p className="text-4xl font-bold font-display">1,284</p>
                 <p className="text-sm opacity-80">tonnes CO₂e</p>
