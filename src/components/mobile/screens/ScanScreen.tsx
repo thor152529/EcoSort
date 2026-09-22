@@ -4,7 +4,7 @@ import { BottomNav } from "../BottomNav";
 import { Image as ImageIcon, ScanLine, Sparkles, CheckCircle2, Loader2, Camera, RotateCcw, ShieldCheck, History, Award, Recycle, ChevronRight } from "lucide-react";
 import { ensureAuthenticatedUser } from "@/firebase/auth";
 import { saveWasteScan } from "@/firebase/firestore";
-import { analyzeWasteImage, createDemoWasteAnalysis, type WasteAnalysis } from "@/firebase/ai";
+import { analyzeWasteImage, type WasteAnalysis } from "@/firebase/ai";
 import { toast } from "sonner";
 
 type HistoryItem = WasteAnalysis & { at: string };
@@ -91,10 +91,7 @@ export function ScanScreen() {
           <h2 className="text-xl font-bold font-display">Smart Waste Scanner</h2>
           <p className="text-[10px] opacity-60 mt-0.5">Scan • classify • dispose • earn</p>
         </div>
-        <button type="button" onClick={toggleDemo} className="flex flex-col items-center gap-0.5 rounded-xl bg-primary-foreground/10 border border-primary-foreground/15 px-2.5 py-2 backdrop-blur">
-          <Zap className="h-3.5 w-3.5 text-accent" />
-          <span className="text-[8px] font-bold">${demoMode ? "DEMO" : "LIVE"}</span>
-        </button>
+        <div className="rounded-xl bg-accent/10 border border-accent/20 px-2.5 py-2 text-center"><p className="text-[8px] font-bold text-accent">WORKING DEMO</p><p className="text-[7px] opacity-60">Transparent output</p></div>
       </div>
 
       <div className="mx-5 mt-2 rounded-2xl bg-accent/10 border border-accent/20 px-3 py-2.5 flex items-center gap-2">
@@ -117,7 +114,7 @@ export function ScanScreen() {
         <div className="absolute left-3 right-3 bottom-3 flex items-center gap-2 bg-foreground/75 backdrop-blur-xl rounded-xl px-3 py-2.5 border border-primary-foreground/10">
           {saving ? <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> : <ScanLine className="h-3.5 w-3.5 text-accent" />}
           <span className="text-[10px] font-semibold">{status}</span>
-          <span className="ml-auto text-[9px] font-mono text-accent">{analysis ? (analysis.source === "demo" ? "DEMO SCENARIO" : analysis.confidence.toFixed(1) + "% confidence") : "READY"}</span>
+          <span className="ml-auto text-[9px] font-mono text-accent">{analysis ? "DEMO SCENARIO" : "READY"}</span>
         </div>
       </div>
 
@@ -129,7 +126,7 @@ export function ScanScreen() {
                 <div className="flex items-center gap-1.5 mb-1">
                   <Sparkles className="h-3 w-3 text-accent" />
                   <p className="text-[9px] uppercase tracking-[0.16em] opacity-75 font-bold">AI Detection</p>
-                  <span className="px-1.5 py-0.5 rounded-full bg-primary-foreground/15 text-[8px] font-bold">${analysis.source === "demo" ? "DEMO RESULT" : "LIVE"}</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-primary-foreground/15 text-[8px] font-bold">DEMO RESULT</span>
                 </div>
                 <p className="text-xl font-bold font-display">{analysis.item}</p>
                 <p className="text-[10px] opacity-75 mt-0.5">Visual classification • {analysis.category}</p>
@@ -147,7 +144,7 @@ export function ScanScreen() {
             <div className="rounded-2xl border border-border p-3">
               <div className="flex items-center justify-between"><p className="text-[10px] font-bold">Confidence</p><p className="text-[10px] font-bold text-primary">{analysis.confidence.toFixed(1)}%</p></div>
               <div className="mt-2 h-2 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${analysis.confidence}%` }} /></div>
-              <p className="text-[9px] text-muted-foreground mt-1.5">${analysis.source === "demo" ? "Demo scenario selected by the presenter — not an image-model confidence." : "Live visual confidence — not a guaranteed probability."}</p>
+              <p className="text-[9px] text-muted-foreground mt-1.5">Demo scenario — not model confidence.</p>
             </div>
 
             <div className="rounded-2xl bg-secondary/50 p-3 flex items-start gap-2"><Recycle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="text-[10px] font-bold">Why this result?</p><p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{analysis.evidence}</p></div></div>
