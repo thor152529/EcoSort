@@ -30,6 +30,7 @@ export function ScanScreen() {
   const [demoMode, setDemoMode] = useState(() => localStorage.getItem("ecosort-demo-mode") !== "off");
   const [history, setHistory] = useState<HistoryItem[]>(readHistory);
   const [status, setStatus] = useState("Ready to scan");
+  const [demoItem, setDemoItem] = useState("Plastic Bottle");
 
   const handleImage = async (file?: File) => {
     if (!file || saving) return;
@@ -40,14 +41,14 @@ export function ScanScreen() {
       let result: WasteAnalysis;
       if (demoMode) {
         await new Promise((resolve) => setTimeout(resolve, 800));
-        result = createDemoWasteAnalysis(file.name + file.size);
+        result = createDemoWasteAnalysis(demoItem);
       } else {
         try {
           result = await analyzeWasteImage(file);
         } catch (error) {
           console.warn("Live AI unavailable; using labelled demo result.", error);
-          result = createDemoWasteAnalysis(file.name + file.size);
-          toast.info("Firebase AI Logic is not ready. Showing a clearly labelled demo result.");
+          result = createDemoWasteAnalysis(demoItem);
+          toast.info("Live AI is unavailable. Select the matching demo item for this photo.");
         }
       }
 
@@ -120,7 +121,7 @@ export function ScanScreen() {
         <ShieldCheck className="h-4 w-4 text-accent flex-shrink-0" />
         <div>
           <p className="text-[10px] font-bold">${demoMode ? "Presentation Demo Mode" : "Live Gemini Mode"}</p>
-          <p className="text-[9px] opacity-65 leading-snug">${demoMode ? "Realistic sample results keep the complete UX working without Firebase AI Logic." : "Uses Firebase AI Logic; setup errors fall back to clearly labelled demo data."}</p>
+          <p className="text-[9px] opacity-65 leading-snug">${demoMode ? "Demo mode never guesses from pixels. Choose the item shown in your photo; LIVE mode is reserved for real AI classification." : "Uses Firebase AI Logic only when LIVE AI is configured. Demo mode never pretends to be an AI prediction."}</p>
         </div>
       </div>
 
@@ -136,7 +137,7 @@ export function ScanScreen() {
         <div className="absolute left-3 right-3 bottom-3 flex items-center gap-2 bg-foreground/75 backdrop-blur-xl rounded-xl px-3 py-2.5 border border-primary-foreground/10">
           {saving ? <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" /> : saved ? <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> : <ScanLine className="h-3.5 w-3.5 text-accent" />}
           <span className="text-[10px] font-semibold">{status}</span>
-          <span className="ml-auto text-[9px] font-mono text-accent">${analysis ? analysis.confidence.toFixed(1) + "% confidence" : "AI READY"}</span>
+          <span className="ml-auto text-[9px] font-mono text-accent">{analysis ? (analysis.source === "demo" ? "DEMO SCENARIO" : analysis.confidence.toFixed(1) + "% confidence") : "READY"}</span>
         </div>
       </div>
 
@@ -166,7 +167,7 @@ export function ScanScreen() {
             <div className="rounded-2xl border border-border p-3">
               <div className="flex items-center justify-between"><p className="text-[10px] font-bold">Confidence</p><p className="text-[10px] font-bold text-primary">{analysis.confidence.toFixed(1)}%</p></div>
               <div className="mt-2 h-2 rounded-full bg-secondary overflow-hidden"><div className="h-full rounded-full bg-gradient-to-r from-primary to-accent" style={{ width: `${analysis.confidence}%` }} /></div>
-              <p className="text-[9px] text-muted-foreground mt-1.5">${analysis.source === "demo" ? "Demo confidence — not a measured model probability." : "Live visual confidence — not a guaranteed probability."}</p>
+              <p className="text-[9px] text-muted-foreground mt-1.5">${analysis.source === "demo" ? "Demo scenario selected by the presenter — not an image-model confidence." : "Live visual confidence — not a guaranteed probability."}</p>
             </div>
 
             <div className="rounded-2xl bg-secondary/50 p-3 flex items-start gap-2"><Recycle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" /><div><p className="text-[10px] font-bold">Why this result?</p><p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{analysis.evidence}</p></div></div>
@@ -182,7 +183,7 @@ export function ScanScreen() {
 
       {!analysis && (
         <>
-          <div className="mx-5 mt-3 grid grid-cols-3 gap-2">
+          <div className="mx-5 mt-3 rounded-2xl bg-primary-foreground/8 border border-primary-foreground/10 p-3">\n            <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-bold">Demo scenario</p><p className="text-[8px] opacity-55">Choose what is actually visible in the photo.</p></div><select value={demoItem} onChange={(e) => setDemoItem(e.target.value)} className="max-w-[145px] rounded-xl bg-primary-foreground/10 border border-primary-foreground/15 px-2 py-2 text-[9px] font-semibold outline-none"><option>Plastic Bottle</option><option>Banana Peel</option><option>Cardboard Box</option><option>Old Smartphone</option><option>Aluminium Can</option><option>Glass Jar</option><option>Food Scraps</option><option>USB Charger</option></select></div>\n          </div>\n          <div className="mx-5 mt-3 grid grid-cols-3 gap-2">
             {[{ icon: Camera, title: "Photo", sub: "Camera ready" }, { icon: Recycle, title: "5 bins", sub: "Smart routing" }, { icon: Award, title: "25 pts", sub: "Max / scan" }].map(({ icon: Icon, title, sub }) => (
               <div key={title} className="rounded-2xl bg-primary-foreground/8 border border-primary-foreground/10 p-2.5 text-center"><Icon className="h-4 w-4 text-accent mx-auto" /><p className="text-[10px] font-bold mt-1">{title}</p><p className="text-[8px] opacity-55">{sub}</p></div>
             ))}
