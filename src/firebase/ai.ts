@@ -1,18 +1,20 @@
-import { getAI, getGenerativeModel, GoogleAIBackend, Schema } from "firebase/ai";
+import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 import { app } from "./config";
 
 const ai = getAI(app, { backend: new GoogleAIBackend() });
 
-const responseSchema = Schema.object({
+const responseSchema = {
+  type: "object",
   properties: {
-    item: Schema.string(),
-    category: Schema.enumString(["wet", "dry", "plastic", "e-waste", "other"]),
-    bin: Schema.string(),
-    confidence: Schema.number(),
-    points: Schema.number(),
-    tip: Schema.string(),
+    item: { type: "string" },
+    category: { type: "string", enum: ["wet", "dry", "plastic", "e-waste", "other"] },
+    bin: { type: "string" },
+    confidence: { type: "number" },
+    points: { type: "number" },
+    tip: { type: "string" },
   },
-});
+  required: ["item", "category", "bin", "confidence", "points", "tip"],
+};
 
 const model = getGenerativeModel(ai, {
   model: "gemini-3.8-flash",
