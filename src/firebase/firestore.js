@@ -19,7 +19,7 @@ export const createUserProfile = async (userId, data = {}) => {
       ...data,
       updatedAt: serverTimestamp(),
     });
-    return existing.data();
+    return { ...existing.data(), ...data };
   }
 
   const profile = {
