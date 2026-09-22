@@ -1,31 +1,86 @@
-// src/firebase/firestore.js
+import {
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  increment,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "./config";
-import { doc, setDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
-// Function to create a user profile in the database
-export const createUserProfile = async (userId, data) => {
-  try {
-    await setDoc(doc(db, "users", userId), {
+export const createUserProfile = async (userId, data = {}) => {
+  const userRef = doc(db, "users", userId);
+  const existing = await getDoc(userRef);
+
+  if (existing.exists()) {
+    await updateDoc(userRef, {
       ...data,
-      ecoPoints: 0,
-      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
-  } catch (error) {
-    console.error("Error creating profile:", error);
+    return existing.data();
   }
+
+  const profile = {
+    ...data,
+    ecoPoints: 0,
+    totalScans: 0,
+    role: "user",
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(userRef, profile);
+  return profile;
 };
 
-// Function to save a waste scan record
-export const saveWasteScan = async (userId, wasteType, points) => {
-  try {
-    await addDoc(collection(db, "scans"), {
-      userId,
-      wasteType,
-      pointsEarned: points,
-      timestamp: serverTimestamp(),
-    });
-    alert("Scan saved to Firebase!");
-  } catch (error) {
-    console.error("Error saving scan:", error);
-  }
+export const getUserProfile = async (userId) => {
+  const snapshot = await getDoc(doc(db, "users", userId));
+  return snapshot.exists() ? snapshot.data() : null;
+};
+
+export const saveWasteScan = async (
+  userId,
+  wasteType,
+  points = 15,
+  bin = "Blue Bin",
+  confidence = 0.984
+) => {
+  if (!userId) throw new Error("No authenticated user.");
+
+  const userRef = doc(db, "users", userId);
+
+  await addDoc(collection(db, "scans"), {
+    userId,
+    wasteType,
+    bin,
+    confidence,
+    pointsEarned: points,
+    timestamp: serverTimestamp(),
+  });
+
+  await updateDoc(userRef, {
+    ecoPoints: increment(points),
+    totalScans: increment(1),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const createPickupRequest = async ({
+  userId,
+  itemType = "Other",
+  day = "Wed",
+  time = "10 AM",
+}) => {
+  if (!userId) throw new Error("No authenticated user.");
+
+  return addDoc(collection(db, "pickupRequests"), {
+    userId,
+    itemType,
+    day,
+    time,
+    status: "Pending",
+    createdAt: serverTimestamp(),
+  });
 };
