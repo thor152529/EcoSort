@@ -24,12 +24,12 @@ const Index = () => {
   ];
 
   const wowFeatures = [
-    { icon: Target, title: "Sustainability Score", desc: "Live 0–100 score across air, water and waste impact.", tone: "bg-primary/10 text-primary" },
-    { icon: Wind, title: "Carbon Tracker", desc: "Real-time CO₂e prevented through accurate segregation.", tone: "bg-dry/10 text-dry" },
-    { icon: Building2, title: "SDG 11 Indicator", desc: "Maps every action to UN Sustainable Cities goal.", tone: "bg-sdg11/10 text-sdg11" },
-    { icon: BarChart3, title: "Smart Analytics", desc: "Ward-level dashboards for ULBs and municipalities.", tone: "bg-plastic/10 text-plastic" },
-    { icon: Award, title: "Eco Badges & Levels", desc: "Streaks, milestones and rewards keep citizens hooked.", tone: "bg-accent/20 text-accent-foreground" },
-    { icon: Globe2, title: "Community Leagues", desc: "Colleges, apartments and wards compete in real time.", tone: "bg-wet/10 text-wet" },
+    { icon: Target, title: "Sustainability Score", desc: "Activity score calculated from recorded scans and points.", tone: "bg-primary/10 text-primary" },
+    { icon: Wind, title: "Carbon Tracker", desc: "Transparent prototype estimate derived from recorded Eco Points.", tone: "bg-dry/10 text-dry" },
+    { icon: Building2, title: "SDG 11 Indicator", desc: "Explains how waste segregation supports SDG 11.", tone: "bg-sdg11/10 text-sdg11" },
+    { icon: BarChart3, title: "Smart Analytics", desc: "Prototype operations dashboard with clearly labelled sample data.", tone: "bg-plastic/10 text-plastic" },
+    { icon: Award, title: "Eco Badges & Levels", desc: "Badges and levels are calculated from recorded scan activity.", tone: "bg-accent/20 text-accent-foreground" },
+    { icon: Globe2, title: "Community Leagues", desc: "Personal progress is shown without fabricated public rankings.", tone: "bg-wet/10 text-wet" },
   ];
 
   return (
@@ -73,7 +73,7 @@ const Index = () => {
               The smartest way to <span className="bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent">recycle India</span>.
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-              {t("appName")} uses on-device AI to classify waste in milliseconds, gamifies civic action with rewards, and gives every municipality a live operations console aligned to <span className="font-semibold text-foreground">UN SDG 11</span>.
+              {t("appName")} uses AI-assisted prototype to classify waste in milliseconds, gamifies civic action with rewards, and gives every municipality a live operations console aligned to <span className="font-semibold text-foreground">UN SDG 11</span>.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#preview" className="group px-6 py-3.5 rounded-2xl bg-gradient-primary text-primary-foreground font-bold text-sm inline-flex items-center gap-2 shadow-glow hover:shadow-elevated hover:-translate-y-0.5 transition-all">
@@ -136,7 +136,7 @@ const Index = () => {
             <span className="inline-flex items-center gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Swachh Bharat</span>
             <span className="inline-flex items-center gap-1.5"><Globe2 className="h-3.5 w-3.5" /> Smart Cities Mission</span>
             <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" /> On-device AI</span>
-            <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> Built with Gemini</span>
+            <span className="inline-flex items-center gap-1.5"><Sparkles className="h-3.5 w-3.5" /> AI-ready architecture</span>
           </div>
         </div>
       </section>
@@ -174,7 +174,7 @@ const Index = () => {
           <div className="relative text-center max-w-2xl mx-auto mb-16">
             <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">The Citizen App</p>
             <h2 className="text-4xl lg:text-5xl font-bold font-display mt-3 text-balance">From scan to impact in 5 seconds.</h2>
-            <p className="text-muted-foreground mt-4 text-lg">Seven beautifully crafted screens. Multi-language. Built for India.</p>
+            <p className="text-muted-foreground mt-4 text-lg">Working prototype screens with clear demo labels. Multi-language. Built for India.</p>
           </div>
 
           <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 justify-items-center">
@@ -195,7 +195,7 @@ const Index = () => {
             <p className="text-xs uppercase tracking-[0.2em] font-bold text-primary">Municipal Console</p>
             <h2 className="text-4xl lg:text-5xl font-bold font-display mt-3 text-balance">A command center for cleaner cities.</h2>
             <p className="mt-5 text-lg text-muted-foreground leading-relaxed">
-              Real-time waste analytics, area heatmaps, complaint SLAs, citizen leagues and SDG 11 tracking — all in a single, beautifully designed console for every ULB.
+              A prototype operations console showing sample analytics. It does not claim live municipal data until a municipal data source is connected.
             </p>
             <ul className="mt-7 grid grid-cols-2 gap-3 text-sm">
               {["Waste analytics", "Area heatmap", "Complaint SLAs", "Citizen reports", "SDG 11 tracker", "Carbon offset", "Community leagues", "Export CSV"].map((f) => (
@@ -214,14 +214,14 @@ const Index = () => {
               <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-wet/60" />
               <span className="h-2.5 w-2.5 rounded-full bg-primary/60" />
-              <span className="ml-3 text-[10px] font-mono text-muted-foreground">ecosort.gov.in/admin</span>
+              <span className="ml-3 text-[10px] font-mono text-muted-foreground">ecosort.local/admin</span>
             </div>
             <div className="aspect-[16/10] bg-gradient-to-br from-secondary via-card to-secondary p-5 grid grid-cols-3 gap-2.5">
               {[Recycle, Trophy, MapPin, Truck, Leaf, User].map((I, i) => (
                 <div key={i} className="bg-card rounded-xl p-3 border border-border flex flex-col gap-2 hover:shadow-soft transition">
                   <div className="flex items-center justify-between">
                     <I className="h-4 w-4 text-primary" />
-                    <span className="text-[8px] font-bold text-primary">+{Math.floor(Math.random() * 30)}%</span>
+                    <span className="text-[8px] font-bold text-primary">+18%</span>
                   </div>
                   <div className="h-1.5 w-2/3 bg-secondary rounded-full" />
                   <div className="h-6 bg-gradient-to-r from-primary/40 to-accent/40 rounded-md" />
@@ -247,7 +247,7 @@ const Index = () => {
               <div className="lg:col-span-2">
                 <p className="text-xs uppercase tracking-[0.2em] font-bold opacity-80">Ready to scale</p>
                 <h2 className="text-3xl lg:text-5xl font-bold font-display mt-3 leading-tight text-balance">Cleaner cities start with one scan.</h2>
-                <p className="mt-4 text-base opacity-90 max-w-2xl">Join 84,000+ citizens and 142 wards already segregating smarter with EcoSort.</p>
+                <p className="mt-4 text-base opacity-90 max-w-2xl">Try the working EcoSort prototype and see exactly which data is real, local, or demonstration-only.</p>
               </div>
               <div className="flex lg:justify-end">
                 <a href="#preview" className="px-6 py-3.5 rounded-2xl bg-accent text-accent-foreground font-bold text-sm inline-flex items-center gap-2 shadow-elevated hover:scale-105 transition">
