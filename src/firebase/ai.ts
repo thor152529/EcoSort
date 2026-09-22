@@ -8,12 +8,13 @@ const responseSchema = {
   properties: {
     item: { type: "string" },
     category: { type: "string", enum: ["wet", "dry", "plastic", "e-waste", "other"] },
-    bin: { type: "string" },
+    bin: { type: "string", enum: ["Green Bin", "Blue Bin", "E-waste Collection", "Other"] },
     confidence: { type: "number" },
-    points: { type: "number" },
+    points: { type: "integer" },
     tip: { type: "string" },
+    evidence: { type: "string" },
   },
-  required: ["item", "category", "bin", "confidence", "points", "tip"],
+  required: ["item", "category", "bin", "confidence", "points", "tip", "evidence"],
 };
 
 const model = getGenerativeModel(ai, {
@@ -31,10 +32,7 @@ function fileToPart(file: File): Promise<{ inlineData: { data: string; mimeType:
       const value = String(reader.result || "");
       const comma = value.indexOf(",");
       resolve({
-        inlineData: {
-          data: comma >= 0 ? value.slice(comma + 1) : value,
-          mimeType: file.type || "image/jpeg",
-        },
+        inlineData: { data: comma >= 0 ? value.slice(comma + 1) : value, mimeType: file.type || "image/jpeg" },
       });
     };
     reader.onerror = reject;
@@ -45,10 +43,11 @@ function fileToPart(file: File): Promise<{ inlineData: { data: string; mimeType:
 export type WasteAnalysis = {
   item: string;
   category: "wet" | "dry" | "plastic" | "e-waste" | "other";
-  bin: string;
+  bin: "Green Bin" | "Blue Bin" | "E-waste Collection" | "Other";
   confidence: number;
   points: number;
   tip: string;
+  evidence: string;
 };
 
 export async function analyzeWasteImage(file: File): Promise<WasteAnalysis> {
@@ -56,31 +55,56 @@ export async function analyzeWasteImage(file: File): Promise<WasteAnalysis> {
   if (file.size > 8 * 1024 * 1024) throw new Error("Please choose an image smaller than 8 MB.");
 
   const imagePart = await fileToPart(file);
-  const prompt = `You are EcoSort, an AI waste-segregation assistant for India.
-Analyze the supplied waste image and return ONLY the requested JSON schema.
+  const prompt = `You are a waste-image classifier, not a general chatbot.
+Only classify what is visually supported by the supplied image.
 
-Choose exactly one category:
-wet = food or organic waste
-dry = paper, cardboard or general dry waste
-plastic = plastic packaging or bottles
-e-waste = electronics, batteries, chargers, phones or cables
-other = unclear or none of the above
+Rules:
+1. Never invent an object that is not visibly present.
+2. If the image is blurry, empty, too dark, contains no clear waste item, or you cannot confidently identify the item, return item "Unclear image", category "other", bin "Other", confidence <= 35, points 0, and a short explanation.
+3. Do not use general world knowledge to claim an exact material when the image cannot establish it.
+4. Confidence is your visual confidence, 0-100. It is not a probability guarantee.
+5. Points must be 0 when confidence is below 60; otherwise use 5-25.
+6. Evidence must describe only visible evidence, for example "transparent bottle-shaped container with cap".
+7. Give conservative disposal advice. If local rules may differ, say so.
 
-Use a practical bin recommendation such as Green Bin, Blue Bin, E-waste Collection, or Other.
-Confidence must be a number from 0 to 100.
-Points must be an integer from 5 to 25 based on the category and confidence.
-The tip must be a short, safe disposal instruction.
-If the image is unclear, use category "other" and explain that the item should be checked locally.`;
+Classify into exactly one category:
+wet = food/organic
+dry = paper/cardboard/general dry waste
+plastic = visibly plastic packaging/bottles
+e-waste = visibly electronic devices, batteries, chargers or cables
+other = unclear/non-waste/not safely classifiable
+
+Return JSON matching the schema only.`;
 
   const result = await model.generateContent([prompt, imagePart]);
   const parsed = JSON.parse(result.response.text()) as WasteAnalysis;
 
+  const confidence = Math.max(0, Math.min(100, Number(parsed.confidence) || 0));
+  const validCategories = new Set(["wet", "dry", "plastic", "e-waste", "other"]);
+  const category = validCategories.has(parsed.category) ? parsed.category : "other";
+  const validBins = new Set(["Green Bin", "Blue Bin", "E-waste Collection", "Other"]);
+  const bin = validBins.has(parsed.bin) ? parsed.bin : "Other";
+  const points = confidence < 60 ? 0 : Math.max(5, Math.min(25, Math.round(Number(parsed.points) || 5)));
+
+  if (confidence < 60 || category === "other") {
+    return {
+      item: "Unclear image",
+      category: "other",
+      bin: "Other",
+      confidence,
+      points: 0,
+      tip: "Please retake the photo with the waste item clearly visible. Check local collection guidance before disposal.",
+      evidence: parsed.evidence || "The image does not provide enough reliable visual evidence.",
+    };
+  }
+
   return {
-    item: parsed.item || "Unknown item",
-    category: parsed.category || "other",
-    bin: parsed.bin || "Check local collection",
-    confidence: Math.max(0, Math.min(100, Number(parsed.confidence) || 0)),
-    points: Math.max(5, Math.min(25, Math.round(Number(parsed.points) || 5))),
-    tip: parsed.tip || "Follow your local waste collection guidance.",
+    item: parsed.item || "Unclear item",
+    category,
+    bin,
+    confidence,
+    points,
+    tip: parsed.tip || "Follow local waste collection guidance.",
+    evidence: parsed.evidence || "Visual evidence recorded by the classifier.",
   };
 }
